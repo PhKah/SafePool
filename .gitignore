@@ -1,0 +1,17 @@
+specs/
+
+# Bỏ qua các file hệ thống do macOS tự sinh ra
+.DS_Store
+
+# Bỏ qua file chứa biến môi trường, API keys, mật khẩu
+.env
+
+# Bỏ qua các file tạm của Python và Jupyter Notebook
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Bỏ qua thư mục chứa thư viện và dependencies
+node_modules/
+venv/
+env/
