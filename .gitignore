@@ -1,5 +1,3 @@
-specs/
-
 # Bỏ qua các file hệ thống do macOS tự sinh ra
 .DS_Store
 
