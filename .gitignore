@@ -13,3 +13,29 @@ __pycache__/
 node_modules/
 venv/
 env/
+
+# Bỏ qua dữ liệu thô lớn và file nén (không commit hàng chục nghìn ảnh lên git)
+data/raw/
+*.zip
+*.tar.gz
+
+# Bỏ qua file trọng số mô hình lớn
+*.pt
+*.pth
+*.onnx
+*.engine
+runs/
+experiments/
+
+# Bỏ qua dữ liệu thô lớn và file nén (không commit hàng chục nghìn ảnh lên git)
+data/raw/
+*.zip
+*.tar.gz
+
+# Bỏ qua file trọng số mô hình lớn
+*.pt
+*.pth
+*.onnx
+*.engine
+runs/
+experiments/
