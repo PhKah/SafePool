@@ -10,13 +10,13 @@
 
 ## 1. Tổng Quan Phân Bố Dữ Liệu (Dataset Splits & Volume)
 
-Bộ dữ liệu chứa tổng cộng **12,365 ảnh** với kịch bản thực tế nhiều người cùng bơi trong bể (tối đa lên đến 21 người/khung hình):
+Bộ dữ liệu chứa tổng cộng **12,365 ảnh** với kịch bản thực tế nhiều người cùng bơi trong bể (tối đa lên đến 22 người/khung hình):
 
 | Tập dữ liệu (Split) | Số lượng Ảnh | Độ phân giải | Tổng số Bounding Box | Số người TB / Ảnh | Tỷ lệ dữ liệu |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Train** | **10,140** | $416 \times 416$ | **18,752** | ~1.85 người | 82.0% |
 | **Validation** | **1,478** | $416 \times 416$ | **2,748** | ~1.86 người | 12.0% |
-| **Test** | **747** | $416 \times 416$ | **1,521** | ~2.03 người | 6.0% |
+| **Test** | **747** | $416 \times 416$ | **1,521** | ~2.04 người | 6.0% |
 | **Tổng cộng** | **12,365** | $416 \times 416$ | **23,021** | **100% có gán nhãn** | 100% |
 
 ---
@@ -41,10 +41,10 @@ Theo tệp cấu hình [`data/raw/data.yaml`](file:///Users/phamkhanh/Documents/
 
 ## 3. Đặc Thù Nhiều Mục Tiêu / Khung Hình (Multi-Target Distribution)
 
-Khác với tập dữ liệu nhân tạo chỉ có 1 người, tập dữ liệu này phản ánh không gian bể bơi thực tế:
-- **Ảnh có 1 người:** 6,656 ảnh (~65.6%)
-- **Ảnh có từ 2 – 5 người:** 3,182 ảnh (~31.4%)
-- **Ảnh đông người (6 – 21 người):** 302 ảnh (~3.0%)
+Khác với tập dữ liệu nhân tạo chỉ có 1 người, tập dữ liệu này phản ánh không gian bể bơi thực tế (trên toàn bộ **12,365 ảnh**):
+- **Ảnh có 1 người:** **8,055** ảnh (~65.1% — Train: 6,656 | Val: 945 | Test: 454)
+- **Ảnh có từ 2 – 5 người:** **3,935** ảnh (~31.8% — Train: 3,182 | Val: 486 | Test: 267)
+- **Ảnh đông người (6 – 22 người):** **375** ảnh (~3.0% — Train: 302 | Val: 47 | Test: 26; tối đa 21 người ở Train và 22 người ở Test)
 
 > [!IMPORTANT]
 > **Yêu cầu đối với kiến trúc mô hình:**
