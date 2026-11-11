@@ -39,3 +39,6 @@ data/raw/
 *.engine
 runs/
 experiments/
+
+# Bỏ qua thư mục quản lý dự án cá nhân (Project Management)
+PM/

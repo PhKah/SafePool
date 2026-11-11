@@ -11,4 +11,4 @@ Thư mục chứa toàn bộ tài liệu kỹ thuật, đặc tả bài toán, t
 2. [**`dataset_specs.md`**](dataset_specs.md)
    - Đặc tả chi tiết bộ dữ liệu thực tế `data/raw/` (`12,365` ảnh `416×416`, `23,021` bounding boxes, 3 lớp `Drowning`, `Person out of water`, `Swimming`), phân bố mất cân bằng lớp và đa mục tiêu.
 3. [**`roadmap.md`**](roadmap.md)
-   - Lộ trình 5 cổng kiểm soát (*From Scratch*: Clean Split & Input Pipeline, Sanity Check, vòng lặp Baseline → Error Analysis → Ablation Study, Sliding Window & Edge Demo) và timeline gợi ý 8 tuần (đang chờ duyệt).
+   - Lộ trình 5 cổng kiểm soát theo hướng **2-Stage From Scratch** (Clean Split & dữ liệu cho Stage 1 + Stage 2, Sanity Check, vòng lặp Baseline → Error Analysis → Ablation & Model Freeze Tuần 6, IoU Tracking + Sliding Window & Edge Demo) và timeline gợi ý 8 tuần.
