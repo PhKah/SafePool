@@ -7,6 +7,31 @@
 - [Danh mục tài liệu đặc tả](Specs/README.md)
 - [Đặc tả yêu cầu tối thiểu (`bare_minimum.md`)](Specs/bare_minimum.md)
 - [Đặc tả bộ dữ liệu & EDA (`dataset_specs.md`)](Specs/dataset_specs.md)
+- [Lộ trình 5 giai đoạn 2-Stage From Scratch (`roadmap.md`)](Specs/roadmap.md)
+- [Nhật ký thực nghiệm nhóm (`experiment_log.md`)](Specs/experiment_log.md)
+
+---
+
+## Cấu trúc thư mục dự án
+
+Cây thư mục quy ước khi làm việc trên máy cá nhân / Google Colab (bao gồm cả các thư mục dữ liệu không đẩy lên Git):
+
+```text
+SafePool/
+├── .github/          # [Tracked on Git] Mẫu GitHub Issue Forms cho nhóm
+├── data/
+│   ├── raw/          # [Local / Git-ignored] Ảnh gốc tải từ Roboflow (xem mục bên dưới)
+│   ├── splits/       # [Tracked on Git] Bộ chia tập sạch (clean Group Split) dùng chung
+│   └── processed/    # [Local / Git-ignored] Ảnh ROI cắt cho Stage 2 (tự sinh bằng script)
+├── checkpoints/      # [Local / Git-ignored] Trọng số mô hình .pt / .onnx khi train & export
+├── src/              # [Tracked on Git] Mã nguồn datasets, models, engine, inference
+├── scripts/          # [Tracked on Git] Script chuẩn bị dữ liệu & export ONNX
+├── tests/            # [Tracked on Git] Unit test kiểm tra split (0% leakage), shape, metrics
+└── Specs/            # [Tracked on Git] Đặc tả kỹ thuật, roadmap, experiment_log & run_logs
+```
+
+> [!NOTE]
+> Thư mục `data/raw/`, `data/processed/`, `checkpoints/` và các tệp trọng số/nén (`*.pt`, `*.onnx`, `*.zip`) nằm trong [`.gitignore`](.gitignore) nên không được đẩy lên Git. Thành viên mới sau khi `git clone` chỉ cần tải `data/raw/` theo hướng dẫn dưới đây và chạy script tiền xử lý (sẽ sinh `data/processed/` từ `data/raw/` + `data/splits/`).
 
 ---
 
@@ -18,9 +43,6 @@ Dự án sử dụng bộ dữ liệu **Swimming and Drowning Detection** trên 
 - **Trang dataset (v1):** https://universe.roboflow.com/university-g3h71/swimming-and-drowning-detection/dataset/1
 - **Thông tin cơ bản:** `12,365` ảnh (`416×416`), **3 lớp** (`Drowning`, `Person out of water`, `Swimming`), giấy phép `CC BY 4.0`.
 - **Định dạng yêu cầu:** **YOLOv8** (`yolov8`).
-
-> [!NOTE]
-> Thư mục `data/raw/` và các tệp nén (`*.zip`, `*.tar.gz`) đã được cấu hình trong [`.gitignore`](.gitignore) để không đẩy dữ liệu dung lượng lớn lên Git. Do đó, cần tải dữ liệu thủ công về máy trước khi huấn luyện hoặc chạy EDA.
 
 ### Hướng dẫn tải dữ liệu (Định dạng YOLOv8)
 
