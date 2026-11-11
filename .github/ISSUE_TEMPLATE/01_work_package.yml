@@ -1,0 +1,86 @@
+name: "Work Package (Đầu việc kỹ thuật)"
+description: "Tạo đầu việc chuẩn 0.5–2 ngày theo lộ trình 2-Stage From Scratch của SafePool"
+title: "[WP-x.x] <Tên đầu việc ngắn gọn>"
+labels: ["work-package"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dùng mẫu này cho các đầu việc phát triển pipeline, code hạ tầng, export mô hình, demo hoặc tài liệu (kích thước khuyến nghị **0.5 – 2.0 ngày**).
+
+  - type: dropdown
+    id: gate
+    attributes:
+      label: "Giai đoạn (Gate)"
+      options:
+        - "G1 — Chuẩn bị dữ liệu 2-Stage & Clean Split"
+        - "G2 — Vòng lặp Train/Eval & Sanity Check"
+        - "G3–G4 — Thiết kế Baseline / End-to-End / Freeze"
+        - "G5 — Tracking, Sliding Window, ONNX & Demo"
+        - "Tuần 8 — Báo cáo & Slide"
+    validations:
+      required: true
+
+  - type: input
+    id: wp_id
+    attributes:
+      label: "Mã Work Package & Đường găng"
+      description: "Ví dụ: WP-1.1 (Nằm trên đường găng*)"
+      placeholder: "WP-1.1"
+    validations:
+      required: true
+
+  - type: input
+    id: dependencies
+    attributes:
+      label: "Phụ thuộc & Đầu vào (PDM)"
+      description: "Ghi rõ việc cần xong trước (FS) hoặc chạy song song (SS) và trạng thái đầu vào."
+      placeholder: "Phụ thuộc WP-1.1 (FS) — Đầu vào đã sẵn sàng"
+    validations:
+      required: true
+
+  - type: input
+    id: pert_estimate
+    attributes:
+      label: "Ước lượng 3 mức PERT (Nhanh / Hợp lý / Chậm)"
+      description: "Đã tính gồm: Spec + Code với Coding Agent + Review 30–40% + Chờ chạy test/GPU."
+      placeholder: "0.5 / 1.0 / 1.5 ngày"
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverable_ac
+    attributes:
+      label: "Sản phẩm đầu ra (Deliverable) & Tiêu chí đạt (AC)"
+      description: "Đầu ra cụ thể nào sẽ được bàn giao (file code, manifest, báo cáo) và điều kiện nào để bấm Done?"
+      value: |
+        **Sản phẩm đầu ra (Deliverable):**
+        -
+
+        **Tiêu chí đạt (Acceptance Criteria):**
+        -
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: pm_checklist
+    attributes:
+      label: "Kiểm tra nhanh trước khi đưa vào làm (WIP ≤ 1–2 việc/người)"
+      options:
+        - label: "Đầu ra đo lường được (không phải task mơ hồ kiểu 'ngồi tìm hiểu')"
+          required: true
+        - label: "Đầu vào từ các module phụ thuộc đã sẵn sàng"
+          required: true
+        - label: "Thời lượng dự kiến nằm trong khoảng 0.5 – 2.0 ngày"
+          required: true
+
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: "Tiêu chuẩn hoàn thành (Definition of Done — đánh dấu trước khi đóng Issue)"
+      options:
+        - label: "Code chạy ổn định, cố định seed, không hardcode đường dẫn cá nhân"
+        - label: "Người thực hiện hiểu và giải thích được toàn bộ logic code (kể cả phần Coding Agent tạo)"
+        - label: "Đã chạy kiểm tra thực tế (test / verify), không chỉ mới 'chạy trên máy cá nhân'"
+        - label: "Không tự ý thêm tính năng ngoài phạm vi (No Gold Plating)"
+

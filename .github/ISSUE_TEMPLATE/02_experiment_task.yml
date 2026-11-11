@@ -1,0 +1,76 @@
+name: "Experiment Task (Thử nghiệm R&D)"
+description: "Đăng ký 1 giả thuyết thử nghiệm (S2-xx / S1-xx) theo quy trình 5 bước trên Git"
+title: "[EXP][<RUN_ID>] <Tên ngắn giả thuyết>"
+labels: ["experiment"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dùng mẫu này để **Claim Run ID** trước khi chạy thử nghiệm ở G2–G4.
+        Mỗi thử nghiệm chỉ thay đổi **1 yếu tố chính** và đánh giá trên **clean Group Split**.
+        Sau khi chạy xong, tạo file Run Log theo `Specs/run_logs/_template.md` và mở PR để Lead duyệt vào `Specs/experiment_log.md`.
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: "Phạm vi Stage"
+      options:
+        - "Stage 2 — ROI Behavior Classifier (3 lớp: Drowning / Person out of water / Swimming)"
+        - "Stage 1 — Person Localizer (1 lớp person trên 416×416)"
+        - "End-to-End — Chuỗi Stage 1 → NMS → Stage 2"
+    validations:
+      required: true
+
+  - type: input
+    id: run_id
+    attributes:
+      label: "Run ID & Slot liên kết"
+      description: "Lấy Run ID kế tiếp chưa trùng trong Specs/experiment_log.md."
+      placeholder: "S2-02 (EXP-SLOT-1)"
+    validations:
+      required: true
+
+  - type: input
+    id: base_run
+    attributes:
+      label: "Kế thừa từ Run gốc & Nhánh Git dự kiến"
+      placeholder: "Kế thừa S2-01 | Branch: exp/S2-02-focal-loss"
+    validations:
+      required: true
+
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: "Giả thuyết kỹ thuật & 1 thay đổi duy nhất"
+      description: "Dựa trên lỗi nào từ Error Analysis của Run trước? Chỉ thay đổi 1 biến chính để so sánh công bằng."
+      value: |
+        **Lỗi quan sát được ở Run gốc:**
+        -
+
+        **1 thay đổi duy nhất trong thử nghiệm này:**
+        -
+
+        **Kỳ vọng cải thiện:**
+        -
+    validations:
+      required: true
+
+  - type: input
+    id: pert_estimate
+    attributes:
+      label: "Ước lượng thời gian (đã gồm thời gian chạy GPU + Review)"
+      placeholder: "1.0 / 1.5 / 2.0 ngày (GPU ~1–2 giờ/run)"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: experiment_rules
+    attributes:
+      label: "Cam kết quy chuẩn thí nghiệm & DoD (đánh dấu khi mở PR)"
+      options:
+        - label: "Đánh giá trên đúng clean Group Split và cùng hàm metric chuẩn của nhóm"
+        - label: "Không bật thêm RandomVerticalFlip (ảnh gốc Roboflow đã lật dọc 50%)"
+        - label: "Kiểm tra ngân sách Edge AI (tổng 2 Stage < 15 MB, < 5.0M params, < 9.0 GFLOPs, ≥ 30 FPS)"
+        - label: "Đã tạo file Run Log trong Specs/run_logs/ và không push file trọng số (.pt / .onnx)"
+        - label: "Người thực hiện hiểu rõ toàn bộ code thay đổi (kể cả phần Coding Agent tạo)"
+
