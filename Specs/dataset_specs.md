@@ -41,14 +41,14 @@ Theo tệp cấu hình [`data/raw/data.yaml`](file:///Users/phamkhanh/Documents/
 
 ## 3. Đặc Thù Nhiều Mục Tiêu / Khung Hình (Multi-Target Distribution)
 
-Khác với tập dữ liệu nhân tạo chỉ có 1 người, tập dữ liệu này phản ánh không gian bể bơi thực tế (trên toàn bộ **12,365 ảnh**):
+Khác với tập dữ liệu nhân tạo chỉ có 1 người, tập dữ liệu này phản ánh không gian bể bơi thực tế (trên toàn bộ **12,365 ảnh**, có **4,310 ảnh — ~34.86%** chứa từ 2 người trở lên):
 - **Ảnh có 1 người:** **8,055** ảnh (~65.1% — Train: 6,656 | Val: 945 | Test: 454)
 - **Ảnh có từ 2 – 5 người:** **3,935** ảnh (~31.8% — Train: 3,182 | Val: 486 | Test: 267)
 - **Ảnh đông người (6 – 22 người):** **375** ảnh (~3.0% — Train: 302 | Val: 47 | Test: 26; tối đa 21 người ở Train và 22 người ở Test)
 
 > [!IMPORTANT]
 > **Yêu cầu đối với kiến trúc mô hình:**
-> - Mô hình phải là **Object Detection đa mục tiêu (Multi-object Detection)**, không thể dùng mạng Classification toàn khung hình (Full-image classifier).
+> - Không thể dùng mạng Image Classification đơn lẻ trên toàn khung hình: cần chọn **Object Detection đa mục tiêu (1-Stage)** trên ảnh $416 \times 416$ hoặc **2-Stage Pipeline** (Stage 1 định vị người $\rightarrow$ Stage 2 phân loại ROI có mở rộng padding ngữ cảnh).
 > - Phải áp dụng **Non-Maximum Suppression (NMS)** hoặc **Soft-NMS** hiệu quả để tách biệt các nạn nhân bơi cạnh nhau mà không bị triệt tiêu nhầm box.
 
 ---
@@ -57,7 +57,24 @@ Khác với tập dữ liệu nhân tạo chỉ có 1 người, tập dữ liệ
 
 1. **Độ phân giải $416 \times 416$:**
    - Kích thước này rất tối ưu cho vi xử lý biên (Jetson Nano, Raspberry Pi 4/5, Intel NUC, Edge PC).
-   - So với $640 \times 640$, ảnh $416 \times 416$ giúp giảm $(\frac{416}{640})^2 \approx 42\%$ khối lượng tính toán (FLOPs), hỗ trợ đạt mục tiêu **$\ge 30$ FPS** và **FLOPs $< 9.0$ GFLOPs**.
+   - So với $640 \times 640$, ảnh $416 \times 416$ giúp giảm $(\frac{416}{640})^2 \approx 42.25\%$ khối lượng tính toán (FLOPs), hỗ trợ đạt mục tiêu **$\ge 30$ FPS** và **FLOPs $< 9.0$ GFLOPs** (lưu ý nếu dùng 2-Stage thì tổng FLOPs bằng `Stage 1 + N × Stage 2` với $N \le 22$).
+   - **Lưu ý tiền xử lý Roboflow:** Theo [`data/raw/README.roboflow.txt`](file:///Users/phamkhanh/Documents/2026.1/DL/Practice/SafePool/data/raw/README.roboflow.txt), ảnh đã được `Resize to 416x416 (Stretch)` (kéo giãn không giữ tỷ lệ khung hình).
 2. **Kỹ thuật Augmentation gốc từ Roboflow:**
-   - Đã áp dụng xoay ngẫu nhiên $\pm 15^\circ$, điều chỉnh độ phơi sáng $\pm 15\%$, lật ngang/dọc $50\%$.
-   - **Cần bổ sung trong training pipeline:** Thêm các augmentation xử lý nhiễu nước đặc thù (mô phỏng chói nắng, bọt nước, vệt mờ chuyển động *Motion Blur*).
+   - Đã áp dụng xoay ngẫu nhiên $\pm 15^\circ$, điều chỉnh độ phơi sáng $\pm 15\%$, lật ngang/dọc $50\%$ (tạo 2 biến thể mỗi ảnh nguồn).
+   - **Cần bổ sung trong training pipeline:** Thêm các augmentation xử lý nhiễu nước đặc thù (mô phỏng chói nắng *glare* cục bộ, bọt nước, *Motion / Gaussian Blur* nhẹ với kernel nhỏ `3×3`). **Không bật thêm `Vertical Flip`** trong PyTorch vì tập gốc đã lật dọc 50%.
+
+---
+
+## 5. Kiểm Định Chất Lượng Dữ Liệu Thực Tế (Leakage & BBox Scale Audit)
+
+Kiểm tra trực tiếp trên toàn bộ **12,365 tệp ảnh** và **23,021 bounding boxes** tại [`data/raw/`](file:///Users/phamkhanh/Documents/2026.1/DL/Practice/SafePool/data/raw) ghi nhận hai đặc điểm quan trọng cần xử lý trước khi huấn luyện:
+
+1. **Rò rỉ dữ liệu giữa các tập (Cross-split Data Leakage):**
+   - Toàn bộ `12,365` ảnh thực chất chỉ xuất phát từ **`1,932` tiền tố ảnh nguồn** (phần tên trước `.rf.`): `Train` có `1,790` tiền tố (một số ảnh gốc lặp tới `36–58` bản sao), `Validation` có `941`, `Test` có `564`.
+   - Có tới **`1,347 / 1,478` (91.1%)** ảnh `Validation` và **`668 / 747` (89.4%)** ảnh `Test` dùng chung tiền tố ảnh nguồn với tập `Train`.
+   - Kiểm tra SHA-256 ghi nhận `12,337` hash ảnh duy nhất (`10` hash ảnh giống hệt nhau nằm ở nhiều split) và `10,048` hash nhãn duy nhất (`669` tệp nhãn `.txt` trùng khớp tuyệt đối nằm ở nhiều split).
+   - **Hệ quả & giải pháp:** Điểm đánh giá trên bộ split mặc định của Roboflow sẽ bị **cao ảo**. Trong thực nghiệm (Giai đoạn 1 & 4), cần tạo thêm **Group Split sạch theo tiền tố ảnh/video nguồn** để kiểm chứng khả năng tổng quát hóa thực sự.
+2. **Phân bố kích thước Bounding Box (Tỷ lệ mục tiêu nhỏ):**
+   - Trên hệ tọa độ $416 \times 416$ (`23,021` boxes): chiều rộng `min = 2.0 px`, `p10 = 26.0 px`, `median = 78.0 px`, `p90 = 204.0 px`, `max = 416.0 px`; chiều cao `min = 2.5 px`, `p10 = 30.0 px`, `median = 100.0 px`, `p90 = 229.0 px`, `max = 416.0 px`.
+   - Có **`3,335 / 23,021` (14.5%)** box nhỏ chuẩn COCO (`area < 32×32 px`) và **`531 / 23,021` (2.3%)** box có cạnh ngắn `< 16 px`.
+   - **Hệ quả & giải pháp:** Nếu chọn hướng 2-Stage crop ROI ($128 \times 128$), cần đặt ngưỡng lọc box quá nhỏ (`min_box_size`) để tránh ảnh vỡ nhòe, mở rộng padding ngữ cảnh `15–25%` để giữ thông tin mặt nước/thành bể, và giữ cường độ blur/glare ở mức nhẹ.
