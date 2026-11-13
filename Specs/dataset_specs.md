@@ -65,16 +65,45 @@ Khác với tập dữ liệu nhân tạo chỉ có 1 người, tập dữ liệ
 
 ---
 
-## 5. Kiểm Định Chất Lượng Dữ Liệu Thực Tế (Leakage & BBox Scale Audit)
+## 5. Phân Bố Nguồn & Đặc Thù Gom Nhóm Dữ Liệu (Group Hierarchy & Splits)
 
-Kiểm tra trực tiếp trên toàn bộ **12,365 tệp ảnh** và **23,021 bounding boxes** tại [`data/raw/`](file:///Users/phamkhanh/Documents/2026.1/DL/Practice/SafePool/data/raw) ghi nhận hai đặc điểm quan trọng cần xử lý trước khi huấn luyện:
+Phân tích trực tiếp trên toàn bộ **12,365 tệp ảnh** và **23,021 bounding boxes** tại [`data/raw/`](file:///Users/phamkhanh/Documents/2026.1/DL/Practice/SafePool/data/raw) xác định cấu trúc nguồn thực tế của dữ liệu:
 
-1. **Rò rỉ dữ liệu giữa các tập (Cross-split Data Leakage):**
-   - Toàn bộ `12,365` ảnh thực chất chỉ xuất phát từ **`1,932` tiền tố ảnh nguồn** (phần tên trước `.rf.`): `Train` có `1,790` tiền tố (một số ảnh gốc lặp tới `36–58` bản sao), `Validation` có `941`, `Test` có `564`.
-   - Có tới **`1,347 / 1,478` (91.1%)** ảnh `Validation` và **`668 / 747` (89.4%)** ảnh `Test` dùng chung tiền tố ảnh nguồn với tập `Train`.
-   - Kiểm tra SHA-256 ghi nhận `12,337` hash ảnh duy nhất (`10` hash ảnh giống hệt nhau nằm ở nhiều split) và `10,048` hash nhãn duy nhất (`669` tệp nhãn `.txt` trùng khớp tuyệt đối nằm ở nhiều split).
-   - **Hệ quả & giải pháp:** Điểm đánh giá trên bộ split mặc định của Roboflow sẽ bị **cao ảo**. Trong thực nghiệm (Giai đoạn 1 & 4), cần tạo thêm **Group Split sạch theo tiền tố ảnh/video nguồn** để kiểm chứng khả năng tổng quát hóa thực sự.
-2. **Phân bố kích thước Bounding Box (Tỷ lệ mục tiêu nhỏ):**
-   - Trên hệ tọa độ $416 \times 416$ (`23,021` boxes): chiều rộng `min = 2.0 px`, `p10 = 26.0 px`, `median = 78.0 px`, `p90 = 204.0 px`, `max = 416.0 px`; chiều cao `min = 2.5 px`, `p10 = 30.0 px`, `median = 100.0 px`, `p90 = 229.0 px`, `max = 416.0 px`.
-   - Có **`3,335 / 23,021` (14.5%)** box nhỏ chuẩn COCO (`area < 32×32 px`) và **`531 / 23,021` (2.3%)** box có cạnh ngắn `< 16 px`.
-   - **Hệ quả & giải pháp:** Nếu chọn hướng 2-Stage crop ROI ($128 \times 128$), cần đặt ngưỡng lọc box quá nhỏ (`min_box_size`) để tránh ảnh vỡ nhòe, mở rộng padding ngữ cảnh `15–25%` để giữ thông tin mặt nước/thành bể, và giữ cường độ blur/glare ở mức nhẹ.
+### 5.1. Hai cấp độ nhóm nguồn (Source Hierarchy)
+1. **Cấp độ 1 (Frame-level trước `.rf.`):**
+   - Toàn bộ `12,365` ảnh thực chất chỉ xuất phát từ **`1,932` tiền tố frame duy nhất**.
+   - Nhiều ảnh là các bản sao augmentation (lật, xoay $\pm 15^\circ$, đổi độ phơi sáng) sinh ra từ cùng 1 frame gốc.
+   - *Ở split mặc định của Roboflow:* Có tới **91.1%** ảnh `valid/` (`1,347/1,478`) và **89.4%** ảnh `test/` (`668/747`) dùng chung tiền tố ảnh với `train/` (rò rỉ dữ liệu chéo).
+2. **Cấp độ 2 (Video-level theo clip gốc):**
+   - Có **35 video roots** chính (nhận diện qua chuỗi khung hình liên tiếp `_mp4`, `-mp4`, `_mov`, `_avi`, `clipchamp`). Khi gom cả các frame liên tiếp của cùng 1 video về chung nhóm, toàn bộ dữ liệu rút gọn còn **`1,363` nhóm độc lập**.
+   - **Video siêu lớn (`drowning1_mp4`):** Riêng clip này chứa **1,048 ảnh** (~8.5% toàn bộ dữ liệu), gồm `1,299` box `Drowning`, `1,146` box `Swimming` và **0** box `Person out of water`.
+
+### 5.2. Thống kê hai cấu hình phân chia tập dữ liệu (Dataset Splits)
+
+| Tập dữ liệu | Cấu hình Split Mặc Định (Roboflow Leakage) | Cấu hình Split Sạch Theo Nhóm (Clean Group Split) |
+| :--- | :---: | :---: |
+| **Train** | 10,140 ảnh (82.0%) \| 18,752 boxes (C0: 10,867, C1: 616, C2: 7,269) | **8,655 ảnh (70.0%)** \| 16,321 boxes (C0: 8,347, C1: 549, C2: 7,425) |
+| **Validation** | 1,478 ảnh (12.0%) \| 2,748 boxes (C0: 1,577, C1: 98, C2: 1,073) | **1,855 ảnh (15.0%)** \| 2,987 boxes (C0: 1,999, C1: 118, C2: 870) |
+| **Test** | 747 ảnh (6.0%) \| 1,521 boxes (C0: 787, C1: 71, C2: 663) | **1,855 ảnh (15.0%)** \| 3,713 boxes (C0: 2,885, C1: 118, C2: 710) |
+| **Tổng cộng** | **12,365 ảnh (100%) \| 23,021 boxes** | **12,365 ảnh (100%) \| 23,021 boxes** |
+| **Tỷ lệ rò rỉ** | **91.1% Val & 89.4% Test trùng nguồn Train** | **0.0% rò rỉ (hoàn toàn độc lập theo nhóm)** |
+
+### 5.3. Phân bố kích thước Bounding Box (Tỷ lệ mục tiêu nhỏ)
+- Trên hệ tọa độ $416 \times 416$ (`23,021` boxes): 
+  - Chiều rộng: `min = 2.0 px`, `p10 = 26.0 px`, `median = 78.0 px`, `p90 = 204.0 px`, `max = 416.0 px`.
+  - Chiều cao: `min = 2.5 px`, `p10 = 30.0 px`, `median = 100.0 px`, `p90 = 229.0 px`, `max = 416.0 px`.
+- Có **`3,335 / 23,021` (14.5%)** box nhỏ chuẩn COCO (`area < 32×32 px`) và **`531 / 23,021` (2.3%)** box có cạnh ngắn `< 16 px`.
+
+---
+
+## 6. Đặc Tả Định Dạng & Cấu Trúc Tệp (Format Specifications & Edge Cases)
+
+### 6.1. Định dạng tệp dữ liệu
+- **Tệp ảnh:** 100% tệp là định dạng `.jpg`, kích thước đồng nhất $416 \times 416$.
+- **Tệp nhãn:** 100% tệp là định dạng văn bản UTF-8 (`.txt`) cùng tên với file ảnh tương ứng, mỗi dòng mô tả một bounding box theo chuẩn YOLO: `<class_id> <x_center> <y_center> <width> <height>` với tọa độ chuẩn hóa $[0, 1]$.
+- **Không gian nhãn:** $C \in \{0, 1, 2\}$ với `0: Drowning`, `1: Person out of water`, `2: Swimming`. Không có nhãn rác hay class ID ngoài tập hợp này.
+
+### 6.2. Cấu trúc quy ước đặt tên & Trường hợp biên (Naming Conventions & Edge Cases)
+1. **Cấu trúc tên tệp:** Toàn bộ `12,365` tệp đều tuân theo mẫu `<source_prefix>.rf.<hash>.jpg`.
+2. **Tiền tố có ký tự gạch ngang (`-`):** Có **116 tệp** có tên bắt đầu bằng ký tự `-` (ví dụ: `-Clipchamp-_mp4-35_jpg.rf.xxx.jpg`), đều thuộc nhóm video biên tập từ clipchamp.
+3. **Phần mở rộng lồng nhau:** Các tiền tố frame chứa sẵn chuỗi `_jpg`, `_mp4`, `_mov` trước dấu tách `.rf.` (ví dụ: `youtube-2_jpg.rf.xxx.jpg`, `12_mp4-100_jpg.rf.xxx.jpg`). Điểm phân tách định danh duy nhất là chuỗi `.rf.`.

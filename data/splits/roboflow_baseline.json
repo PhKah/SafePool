@@ -1,0 +1,38 @@
+{
+  "train": {
+    "images_count": 10140,
+    "images_pct": 82.01,
+    "boxes_count": 18752,
+    "boxes_pct": 81.46,
+    "frame_prefixes_count": 1790,
+    "class_distribution": {
+      "0": 10867,
+      "1": 616,
+      "2": 7269
+    }
+  },
+  "valid": {
+    "images_count": 1478,
+    "images_pct": 11.95,
+    "boxes_count": 2748,
+    "boxes_pct": 11.94,
+    "frame_prefixes_count": 941,
+    "class_distribution": {
+      "0": 1577,
+      "1": 98,
+      "2": 1073
+    }
+  },
+  "test": {
+    "images_count": 747,
+    "images_pct": 6.04,
+    "boxes_count": 1521,
+    "boxes_pct": 6.61,
+    "frame_prefixes_count": 564,
+    "class_distribution": {
+      "0": 787,
+      "1": 71,
+      "2": 663
+    }
+  }
+}
