@@ -74,18 +74,13 @@ Theo [`data/raw/data.yaml`](../data/raw/data.yaml) và [`dataset_specs.md`](data
 
 ## GIAI ĐOẠN 2: Luồng Huấn Luyện & Sanity Check (Gate 2)
 
-**Mục tiêu:** Đảm bảo đường ống toán học (forward, loss, backward, optimizer, metric) của cả **Stage 2** và **Stage 1** hoàn toàn không có bug trước khi chạy thử nghiệm lớn.
+> **Lưu ý thuật ngữ:** *Giai đoạn 2 (Tuần 3)* trong lộ trình chịu trách nhiệm thiết lập vòng lặp huấn luyện và kiểm thử cho **cả hai khối mô hình**: **Stage 1 (Định vị người)** và **Stage 2 (Phân loại hành vi ROI)**.
 
-### Nội dung thực hiện
-1. **Xây dựng Training & Evaluation Loop cơ sở:**
-   - **Stage 2 (ROI Classifier):** Tính Loss, **Per-class Recall** (trọng tâm **`Drowning` Recall** ở class `0` và theo dõi sát class `1: Person out of water`), **Precision**, **Macro F1-Score**, **False Alarm Rate (FAR)**.
-   - **Stage 1 (Person Localizer):** Tính Detection Loss và **Person Recall / mAP@50** (đặc biệt lưu ý không bỏ sót người ở xa trong `14.5%` box `< 32×32 px`).
-2. **Sanity Check (Overfit 1 Batch nhỏ):**
-   - Chạy overfit trên `1` batch nhỏ (`8–16` ROI đủ 3 lớp cho Stage 2; `1–4` ảnh cho Stage 1), tắt toàn bộ regularization/augmentation, train `30–50` epochs.
-   - **Điều kiện qua Gate 2:** Loss giảm tiệm cận `0`, chỉ số trên chính batch đó đạt gần `100%` (khẳng định không sai shape, kênh màu RGB/BGR hay ánh xạ nhãn `0, 1, 2`).
-
-### Sản phẩm gợi ý
-- `src/train.py` (hoặc script train cho Stage 2 & Stage 1 hỗ trợ chế độ `--sanity-check`).
+- **Vai trò & Mục đích:** Đóng vai trò là **chốt chặn kỹ thuật (circuit breaker)** giúp *fail-fast* — cô lập hoàn toàn các lỗi kỹ thuật phần mềm (sai shape tensor, ngược kênh màu RGB/BGR, lệch nhãn `0, 1, 2`, trôi gradient, tràn RAM/VRAM) khỏi bài toán tối ưu AI trước khi tốn tài nguyên train lớn; đồng thời chuẩn hóa bộ thước đo an toàn sinh mạng (`Drowning` Recall, FAR, `mAP@50`) làm thước đo thống nhất xuyên suốt dự án.
+- **Mục tiêu cốt lõi:**
+  1. **Đóng gói vòng lặp Train/Eval cơ sở (`src/engine/trainer.py`, `src/metrics.py`):** Viết luồng forward, loss, backward, optimizer và tính metric chuẩn xác trên mọi phần cứng (`CPU/CUDA/MPS`), cố định seed tái lập.
+  2. **Sanity Check (Overfit 1 batch nhỏ):** Huấn luyện thử nghiệm mồi trên 1 batch nhỏ (`8–16` ROI cho Stage 2; `1–4` ảnh cho Stage 1, tắt regularization/augmentation, `30–50` epochs) để chứng minh Loss tiệm cận `0` và đường ống tính toán hoàn toàn sạch bug trước khi bước vào Giai đoạn 3–4.
+- **Sản phẩm gợi ý:** `src/engine/trainer.py`, `src/metrics.py`, cờ `--sanity-check` trong script train và log kiểm chứng mốc số 0 (`S2-00`, `S1-00`) trong `Specs/experiment_log.md`.
 
 ---
 
