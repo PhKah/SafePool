@@ -9,7 +9,7 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .pytest_cache/
-
+.vscode/
 # Bỏ qua thư mục chứa thư viện và dependencies
 node_modules/
 venv/

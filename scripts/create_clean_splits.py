@@ -24,6 +24,12 @@ from collections import Counter, defaultdict
 from typing import Dict, List, Tuple, Any
 
 
+def _label_path_for_image(image_path: str) -> str:
+    image_name = os.path.splitext(os.path.basename(image_path))[0] + ".txt"
+    split_dir = os.path.dirname(os.path.dirname(image_path))
+    return os.path.join(split_dir, "labels", image_name)
+
+
 def validate_raw_dataset(raw_dir: str = "data/raw") -> List[str]:
     """
     Bước 0: Tiền kiểm toán 100% dữ liệu thô.
@@ -60,7 +66,7 @@ def validate_raw_dataset(raw_dir: str = "data/raw") -> List[str]:
             leading_dash_count += 1
             
         # Kiểm tra file nhãn tương ứng
-        lbl_p = img_p.replace("/images/", "/labels/").rsplit(".", 1)[0] + ".txt"
+        lbl_p = _label_path_for_image(img_p)
         if not os.path.exists(lbl_p):
             anomalies.append(f"{img_p}: Thiếu file nhãn tương ứng tại {lbl_p}")
         else:
@@ -124,7 +130,7 @@ def build_groups_dict(image_paths: List[str], group_level: str = "video") -> Dic
         gid = extract_group_id(fname, level=group_level)
         frame_prefix = fname.split(".rf.")[0].lower()
         
-        lbl_p = img_p.replace("/images/", "/labels/").rsplit(".", 1)[0] + ".txt"
+        lbl_p = _label_path_for_image(img_p)
         c = Counter()
         n_boxes = 0
         with open(lbl_p, "r", encoding="utf-8") as f:
@@ -274,7 +280,7 @@ def get_roboflow_baseline_summary(raw_dir: str = "data/raw") -> Dict[str, Any]:
         for img_p in imgs:
             fname = os.path.basename(img_p)
             prefixes.add(fname.split(".rf.")[0].lower())
-            lbl_p = img_p.replace("/images/", "/labels/").rsplit(".", 1)[0] + ".txt"
+            lbl_p = _label_path_for_image(img_p)
             with open(lbl_p, "r", encoding="utf-8") as f:
                 for line in f:
                     parts = line.strip().split()
@@ -298,6 +304,10 @@ def get_roboflow_baseline_summary(raw_dir: str = "data/raw") -> Dict[str, Any]:
 
 
 def main():
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+
     parser = argparse.ArgumentParser(description="Tạo bộ chia tập sạch (Clean Group Split) cho SafePool.")
     parser.add_argument("--raw-dir", type=str, default="data/raw", help="Thư mục dữ liệu thô gốc")
     parser.add_argument("--output-dir", type=str, default="data/splits", help="Thư mục lưu trữ kết quả chia tập")
@@ -368,7 +378,7 @@ def main():
         with open(txt_path, "w", encoding="utf-8") as f:
             for p in file_list:
                 # Lưu đường dẫn tương đối chuẩn từ thư mục gốc dự án
-                rel_p = os.path.relpath(p, start=os.getcwd())
+                rel_p = os.path.relpath(p, start=os.getcwd()).replace(os.sep, "/")
                 f.write(f"{rel_p}\n")
         print(f"  -> Đã xuất {txt_path} ({len(file_list)} tệp ảnh)")
 
