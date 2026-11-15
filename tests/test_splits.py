@@ -167,7 +167,8 @@ def test_physical_file_existence_and_resolution(split_file_lists):
     for s_name, paths in split_file_lists.items():
         for p in paths:
             assert os.path.exists(p), f"Tệp ảnh không tồn tại: {p}"
-            lbl_p = p.replace("/images/", "/labels/").rsplit(".", 1)[0] + ".txt"
+            label_name = os.path.splitext(os.path.basename(p))[0] + ".txt"
+            lbl_p = os.path.join(os.path.dirname(os.path.dirname(p)), "labels", label_name)
             assert os.path.exists(lbl_p), f"Tệp nhãn tương ứng không tồn tại: {lbl_p}"
             
         # Kiểm tra mẫu ảnh đầu tiên của từng split xem có đúng 416x416

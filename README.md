@@ -60,10 +60,10 @@ Dự án sử dụng bộ dữ liệu **Swimming and Drowning Detection** trên 
 #### Cách 2: Tải bằng Python (`roboflow` SDK)
 
 1. Tại bước chọn định dạng **`YOLOv8`** trên Roboflow, chọn **show download code** để lấy `api_key` của tài khoản.
-2. Cài đặt thư viện `roboflow` và chạy đoạn mã sau từ thư mục gốc `SafePool/`:
+2. Cài đặt các thư viện trong `requirements.txt` từ thư mục gốc `SafePool/`:
 
 ```bash
-pip install roboflow
+pip install -r requirements.txt
 ```
 
 ```python

@@ -1,0 +1,6 @@
+# Optional SDK for downloading the dataset through the Roboflow workflow in README.md.
+roboflow
+
+# Test dependencies.
+Pillow
+pytest
