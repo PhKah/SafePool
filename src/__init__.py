@@ -1,0 +1,1 @@
+# SafePool package root
