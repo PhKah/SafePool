@@ -18,6 +18,8 @@ env/
 # Bỏ qua dữ liệu thô, dữ liệu đã tiền xử lý lớn và file nén (không commit hàng chục nghìn ảnh lên git)
 data/raw/
 data/processed/
+data/stage1/
+
 *.zip
 *.tar.gz
 
@@ -32,3 +34,4 @@ experiments/
 
 # Bỏ qua thư mục quản lý dự án cá nhân (Project Management)
 PM/
+.hoa/

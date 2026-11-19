@@ -4,3 +4,6 @@ roboflow
 # Test dependencies.
 Pillow
 pytest
+
+# Stage 1 Dataset and DataLoader.
+torch
