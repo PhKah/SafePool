@@ -1,6 +1,22 @@
-# Optional SDK for downloading the dataset through the Roboflow workflow in README.md.
-roboflow
+# Core data handling and image processing.
+numpy>=2.1
+Pillow>=10.0
+PyYAML>=6.0
 
-# Test dependencies.
-Pillow
-pytest
+# Deep learning and image transforms for Stage 1/Stage 2.
+torch>=2.6
+torchvision>=0.21
+
+# Training and evaluation utilities.
+scikit-learn>=1.6
+tqdm>=4.66
+
+# Visualization and video inference/demo.
+matplotlib>=3.9
+opencv-python>=4.10
+
+# Tests.
+pytest>=8.3
+
+# Optional SDK used only when downloading the dataset through Roboflow.
+roboflow>=1.1
