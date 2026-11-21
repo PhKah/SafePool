@@ -24,6 +24,7 @@ import os
 import sys
 import json
 import math
+import shutil
 import argparse
 from collections import Counter
 from typing import Dict, List, Tuple
@@ -205,6 +206,10 @@ def main():
     parser.add_argument("--img-size", type=int, default=DEFAULT_IMG_SIZE, help="Kích thước ảnh ROI vuông")
     parser.add_argument("--pad-ratio", type=float, default=DEFAULT_PAD_RATIO, help="Tỷ lệ padding ngữ cảnh")
     parser.add_argument("--min-box-side", type=int, default=MIN_BOX_SIDE_PX, help="Ngưỡng cạnh ngắn box train")
+    parser.add_argument("--clean", action="store_true", default=True,
+                        help="Tự động xóa sạch thư mục split cũ trước khi tạo để tránh tồn đọng ảnh rác/rò rỉ (mặc định: True)")
+    parser.add_argument("--no-clean", dest="clean", action="store_false",
+                        help="Không dọn dẹp thư mục split cũ")
     args = parser.parse_args()
 
     print("=" * 72)
@@ -216,6 +221,7 @@ def main():
     print(f"  ROI size   : {args.img_size}×{args.img_size}")
     print(f"  Pad ratio  : {args.pad_ratio * 100:.0f}%")
     print(f"  Min box side (train only): {args.min_box_side} px")
+    print(f"  Clean stale: {args.clean}")
     print()
 
     split_paths = {}
@@ -233,6 +239,12 @@ def main():
     for s_name in ["train", "valid", "test"]:
         print(f"[XỬ LÝ] Đang crop ROI cho tập '{s_name}'...")
         split_out_dir = os.path.join(args.output_dir, s_name)
+
+        # Dọn dẹp thư mục split cũ để tránh rò rỉ hoặc tồn đọng ảnh từ lần chạy trước với tham số khác
+        if args.clean and os.path.exists(split_out_dir):
+            print(f"  [{s_name}] Dọn dẹp thư mục cũ để tránh tồn đọng ảnh từ lần chạy trước: {split_out_dir}")
+            shutil.rmtree(split_out_dir)
+
         os.makedirs(split_out_dir, exist_ok=True)
 
         counts = process_split(
