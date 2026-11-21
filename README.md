@@ -66,6 +66,8 @@ Dự án sử dụng bộ dữ liệu **Swimming and Drowning Detection** trên 
 pip install -r requirements.txt
 ```
 
+`requirements.txt` bao gồm các thư viện dữ liệu, PyTorch, kiểm thử và tiện ích cho huấn luyện/demo. Backend CUDA không được cố định trong file này; nếu dùng GPU NVIDIA, hãy cài bản PyTorch tương thích với phiên bản CUDA/driver theo hướng dẫn cài đặt chính thức của PyTorch, rồi kiểm tra `torch.cuda.is_available()`.
+
 ```python
 from roboflow import Roboflow
 
