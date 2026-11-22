@@ -136,7 +136,7 @@ def test_dataset_and_dataloader():
     """
     pytest.importorskip("torch")
     import torch
-    from scripts.datasets.stage1.dataset import (
+    from src.dataset import (
         Stage1Dataset,
         create_stage1_dataloader,
     )
