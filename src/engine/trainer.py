@@ -49,6 +49,16 @@ def get_device(preference: str = "auto") -> torch.device:
         raise RuntimeError("Yêu cầu MPS nhưng không khả dụng")
     return device
 
+def move_to_device(obj, device: torch.device):
+    "Với output Stage1 là tuple các tensor [N_i, 5]"
+    if isinstance(obj, torch.Tensor):
+        return obj.to(device)
+    if isinstance(obj, dict):
+        return {k: move_to_device(v, device) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        moved = [move_to_device(v, device) for v in obj]
+        return type(obj)(*moved) if hasattr(obj, "_fields") else type(obj)(moved)
+    return obj #str, int, none... giu nguyen
 
 def train_one_epoch(
     model: nn.Module,
@@ -65,7 +75,7 @@ def train_one_epoch(
     for step, (inputs, targets) in enumerate(loader):
         if max_batches is not None and step >= max_batches:
             break
-        inputs, targets = inputs.to(device), targets.to(device)
+        inputs, targets = move_to_device(inputs, device), move_to_device(targets, device)
         optimizer.zero_grad(set_to_none=True)
         loss = criterion(model(inputs), targets)
         loss_value = loss.item()  # float Python -> không giữ đồ thị autograd (tránh rò rỉ VRAM)

@@ -128,7 +128,7 @@ def _make(torch, nn, DataLoader, TensorDataset, n=24, bs=8, shuffle=False):
 def _live_tensors():
     torch = __import__("torch")
     gc.collect()
-    return sum(1 for o in gc.get_objects() if torch.is_tensor(o))
+    return sum(1 for obj in gc.get_objects() if isinstance(obj, torch.Tensor))
 
 
 def test_overfit_small_batch_no_nan():
@@ -200,3 +200,40 @@ def test_evaluate_accumulates_across_batches_with_missing_class_batches():
     assert sum(res["support"]) == 24 and res["support"] == [8, 8, 8]
     assert res["loss"] is None
     assert all(math.isfinite(v) for v in res["recall"] + res["precision"] + res["f1"])
+
+def test_move_to_device_handles_variable_length_box_targets():
+    torch, nn, DL, TD, evaluate, get_device, set_seed, train_one_epoch = _torch_stack()
+    from src.engine.trainer import move_to_device
+
+    # Giống Stage1Dataset: tuple các tensor [N_i, 5] với N_i khác nhau
+    targets = (torch.zeros(2, 5), torch.ones(5, 5), torch.zeros(0, 5))
+    moved = move_to_device(targets, torch.device("cpu"))
+    assert isinstance(moved, tuple) and [t.shape[0] for t in moved] == [2, 5, 0]
+    assert move_to_device({"a": [torch.ones(1)], "b": "x"}, torch.device("cpu"))["b"] == "x"
+
+
+def test_train_one_epoch_with_tuple_targets_stage1_style():
+    torch, nn, DL, TD, evaluate, get_device, set_seed, train_one_epoch = _torch_stack()
+    set_seed(0)
+    imgs = torch.randn(6, 3, 8, 8)
+    boxes = [torch.rand(n, 5) for n in (1, 3, 2, 5, 1, 4)]  # số box mỗi ảnh khác nhau
+
+    class DS(torch.utils.data.Dataset):
+        def __len__(self):
+            return 6
+
+        def __getitem__(self, i):
+            return imgs[i], boxes[i]
+
+    loader = DL(DS(), batch_size=3, collate_fn=lambda b: (torch.stack([x[0] for x in b]), tuple(x[1] for x in b)))
+    model = nn.Sequential(nn.Flatten(), nn.Linear(192, 4))
+    opt = torch.optim.SGD(model.parameters(), lr=0.01)
+    seen = []
+
+    def criterion(out, targets):  # loss giả: kiểm tra targets đã là tuple tensor trên đúng device
+        assert isinstance(targets, tuple) and all(t.device == out.device for t in targets)
+        seen.append(len(targets))
+        return out.pow(2).mean()
+
+    res = train_one_epoch(model, loader, criterion, opt, torch.device("cpu"))
+    assert math.isfinite(res["loss"]) and res["num_samples"] == 6 and seen == [3, 3]
