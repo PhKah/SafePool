@@ -16,7 +16,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST_PATH = ROOT_DIR / "data/stage1/manifest.json"
 
 
