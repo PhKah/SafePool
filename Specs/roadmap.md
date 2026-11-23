@@ -80,7 +80,7 @@ Theo [`data/raw/data.yaml`](../data/raw/data.yaml) và [`dataset_specs.md`](data
 - **Mục tiêu cốt lõi:**
   1. **Đóng gói vòng lặp Train/Eval cơ sở (`src/engine/trainer.py`, `src/metrics.py`):** Viết luồng forward, loss, backward, optimizer và tính metric chuẩn xác trên mọi phần cứng (`CPU/CUDA/MPS`), cố định seed tái lập.
   2. **Sanity Check (Overfit 1 batch nhỏ):** Huấn luyện thử nghiệm mồi trên 1 batch nhỏ (`8–16` ROI cho Stage 2; `1–4` ảnh cho Stage 1, tắt regularization/augmentation, `30–50` epochs) để chứng minh Loss tiệm cận `0` và đường ống tính toán hoàn toàn sạch bug trước khi bước vào Giai đoạn 3–4.
-- **Sản phẩm gợi ý:** `src/engine/trainer.py`, `src/metrics.py`, cờ `--sanity-check` trong script train và log kiểm chứng mốc số 0 (`S2-00`, `S1-00`) trong `Specs/experiment_log.md`.
+- **Sản phẩm gợi ý:** `src/engine/trainer.py`, `src/metrics.py`, `scripts/sanity_check.py` (chế độ `--sanity-check`) và log kiểm chứng mốc số 0 (`S2-00`, `S1-00`) trong `Specs/experiment_log.md`.
 
 ---
 

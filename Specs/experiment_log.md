@@ -36,7 +36,7 @@
 
 | Run ID | Ngày | Owner | Phiên bản / WP | 1 Thay đổi chính | `Drowning` Recall | `Out-of-water` Recall | `Swimming` Recall | Macro F1 | FAR | Params / FLOPs / Size | Chi tiết Run | Trạng thái |
 | :--- | :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| `S2-00` | — | — | `WP-2.2` Sanity | Mạng mồi, 1 batch `8–16` ROI, no reg/aug | — | — | — | — | — | — | — | *Chờ chạy* |
+| `S2-00` | 2026-11-23 | Khánh | `WP-2.2` Sanity | Mạng mồi `TinyStage2Probe`, 1 batch `12` ROI (`4/lớp`), no reg/aug, 50 ep | `100.0%` | `100.0%` | `100.0%` | `100.0%` | `0.0%` | `26.7K` / — / — | [`S2-00`](run_logs/S2-00_sanity_stage2.md) | **PASSED Gate 2** |
 | `S2-01` | — | — | `WP-3.1` `M1` | Baseline CNN tối giản + GAP + `CrossEntropyLoss` | — | — | — | — | — | — | — | *Mốc Baseline* |
 
 ---
@@ -47,7 +47,7 @@
 
 | Run ID | Ngày | Owner | Phiên bản / WP | 1 Thay đổi chính | Person Recall | `mAP@50` | Small-box Recall (`<32²`) | Params | FLOPs (`416²`) | Size (MB) | FPS | Chi tiết Run | Trạng thái |
 | :--- | :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| `S1-00` | — | — | `WP-2.2` Sanity | Localizer mồi, `1–4` ảnh, no reg/aug | — | — | — | — | — | — | — | — | *Chờ chạy* |
+| `S1-00` | 2026-11-23 | Khánh | `WP-2.2` Sanity | Localizer mồi `TinyStage1Probe`, `2` ảnh (`7` GT), no reg/aug, 80 ep | `100.0%` | `100.0%` | — | `245.7K` | — | — | — | [`S1-00`](run_logs/S1-00_sanity_stage1.md) | **PASSED Gate 2** |
 | `S1-01` | — | — | `WP-3.2` `D1` | Baseline Localizer 1-lớp `person` + NMS | — | — | — | — | — | — | — | — | *Mốc Baseline* |
 
 ---
