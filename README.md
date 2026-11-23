@@ -22,10 +22,11 @@ SafePool/
 ├── data/
 │   ├── raw/          # [Local / Git-ignored] Ảnh gốc tải từ Roboflow (xem mục bên dưới)
 │   ├── splits/       # [Tracked on Git] Bộ chia tập sạch (clean Group Split) dùng chung
+│   ├── stage1/       # [Local / Git-ignored] Nhãn 1-lớp person & manifest Stage 1 (tự sinh bằng script)
 │   └── processed/    # [Local / Git-ignored] Ảnh ROI cắt cho Stage 2 (tự sinh bằng script)
 ├── checkpoints/      # [Local / Git-ignored] Trọng số mô hình .pt / .onnx khi train & export
 ├── src/              # [Tracked on Git] Mã nguồn datasets, models, engine, inference
-├── scripts/          # [Tracked on Git] Script chuẩn bị dữ liệu & export ONNX
+├── scripts/          # [Tracked on Git] Script chuẩn bị dữ liệu, sanity check & export ONNX
 ├── tests/            # [Tracked on Git] Unit test kiểm tra split (0% leakage), shape, metrics
 └── Specs/            # [Tracked on Git] Đặc tả kỹ thuật, roadmap, experiment_log & run_logs
 ```
