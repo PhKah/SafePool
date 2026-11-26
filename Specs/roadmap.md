@@ -88,9 +88,20 @@ Theo [`data/raw/data.yaml`](../data/raw/data.yaml) và [`dataset_specs.md`](data
 
 > Thay vì chốt cứng một chuỗi `M1 → ResBlock → CBAM` hay tách rời cứng nhắc việc sửa kiến trúc với sửa Loss/Augmentation, Giai đoạn 3 và 4 vận hành theo **vòng lặp thực nghiệm có kiểm soát** (mỗi lượt chạy mục tiêu `30 phút – 2–3 giờ` để lặp nhanh).
 
-### Ràng buộc kỹ thuật cần hướng tới (từ [`bare_minimum.md`](bare_minimum.md))
-- **Ngân sách tổng cộng cả 2 Stage:** `Size < 15 MB` | `Params < 5.0M` | `FLOPs(Stage 1) + N × FLOPs(Stage 2) < 9.0 GFLOPs` (với $N \le 22$ người/ảnh) | **Inference tổng hợp:** $\ge 30\text{ FPS}$ (`< 33 ms/frame`) | **`Drowning` Recall:** $\ge 90\%$.
-- *Gợi ý phân bổ ngân sách:* Giữ **Stage 2** thật gọn nhẹ (`< 1–2M` params, `< 0.1–0.2 GFLOPs/ROI`, chạy batch trên GPU/ONNX) để chừa phần lớn ngân sách cho **Stage 1** (`416×416`) và đảm bảo tổng tải luôn dưới trần khi bể đông người.
+### Ràng buộc kỹ thuật & Phân bổ Ngân sách Edge AI giữa 2 Team (từ [`bare_minimum.md`](bare_minimum.md))
+- **Mục tiêu chất lượng:** **`Drowning` Recall:** $\ge 90\%$ trên **clean Group Split**.
+- **Phân bổ ngân sách chính thức khi 2 team phát triển song song (`WP-3.1` & `WP-3.2`):**
+
+| Hạng mục | Trần Tổng Hệ Thống | Team Stage 1 (`WP-3.2` — `416×416`) | Team Stage 2 (`WP-3.1` — `128×128`/ROI) | Dự phòng / Overhead |
+| :--- | :---: | :---: | :---: | :---: |
+| **Params** | `< 5.0M` *(nên $\le 3.5\text{M}$ nếu FP32)* | **`≤ 2.2M`** *(Mốc `D1`: `~1.0M`)* | **`≤ 1.3M`** *(Mốc `M1`: `< 0.5M`)* | Chừa `~1.5M` dự phòng cho G4 |
+| **Model Size** | `< 15 MB` | **`≤ 9.0 MB`** *(FP32)* | **`≤ 5.0 MB`** *(FP32)* | Tổng $\le 14\text{ MB}$ (FP16 giảm còn nửa) |
+| **FLOPs** | `< 9.0 GFLOPs` *($N \le 22$)* | **`≤ 4.5 GFLOPs`** / ảnh `416²` | **`≤ 0.18 GFLOPs`** / ROI `128²` | Ca tệ nhất $N=22$: $4.5 + 22\times 0.18 = 8.46 < 9.0$ |
+| **Latency ($\ge 30\text{ FPS}$)** | `< 33.3 ms / frame` | **`≤ 18 ms`** *(Detector + NMS)* | **`≤ 10 ms`** *(Batch ROI)* | **`≤ 5 ms`** *(Tracker + Sliding Window + OpenCV)* |
+
+> [!NOTE]
+> - **Stage 2 phải đặc biệt tiết kiệm FLOPs/ROI** vì chi phí suy luận nhân theo số người $N$ trong khung hình (tối đa $22\times$).
+> - **Quy đổi dung lượng:** `1.0M` tham số ở `FP32` tốn $\approx 4\text{ MB}$, nên tổng `≤ 3.5M` params giúp giữ file `FP32` dưới `15 MB` mà chưa cần phụ thuộc vào lượng tử hóa `FP16/INT8`.
 
 ### Quy trình lặp mở (Hypothesis-Driven Loop)
 1. **Dựng Mạng Mốc Tối Giản (`M1` — Simple Baseline cho Stage 2 & Stage 1):**
