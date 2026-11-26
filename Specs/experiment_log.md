@@ -26,7 +26,10 @@
 - **Nhịp chạy mục tiêu:** `30 phút – 2–3 giờ` / thử nghiệm.
 - **Per-run Early Stopping:** `patience = 8–12 epochs` theo `Drowning Recall` + `Macro F1` / `mAP@50` trên `valid` sạch.
 - **Diminishing Returns:** Tối đa `3–5` giả thuyết chính sau Baseline `M1`; dừng mở thêm nếu `2` vòng liên tiếp tăng `< +0.5%–1.0%` nhưng tăng FLOPs.
-- **Model Freeze:** Chậm nhất **cuối Tuần 6** chốt trọng số tốt nhất thỏa mãn ngân sách Edge AI (`Size < 15 MB`, `Params < 5.0M`, `FLOPs < 9.0 GFLOPs`, `≥ 30 FPS`).
+- **Model Freeze:** Chậm nhất **cuối Tuần 6** chốt trọng số tốt nhất thỏa mãn ngân sách Edge AI tổng (`Size < 15 MB`, `Params < 5.0M`, `FLOPs < 9.0 GFLOPs` với $N \le 22$, `≥ 30 FPS`).
+- **Trần ngân sách phân bổ theo Stage** *(chi tiết tại [`Specs/roadmap.md`](roadmap.md))*:
+  - **Stage 1 (`416×416`):** `Params ≤ 2.2M` | `Size ≤ 9.0 MB` (FP32) | `FLOPs ≤ 4.5 GFLOPs` | `Latency ≤ 18 ms`.
+  - **Stage 2 (`128×128`/ROI):** `Params ≤ 1.3M` | `Size ≤ 5.0 MB` (FP32) | `FLOPs ≤ 0.18 GFLOPs/ROI` | `Latency ≤ 10 ms` (batch).
 
 ---
 
