@@ -51,7 +51,7 @@
 | Run ID | Ngày | Owner | Phiên bản / WP | 1 Thay đổi chính | Person Recall | `mAP@50` | Small-box Recall (`<32²`) | Params | FLOPs (`416²`) | Size (MB) | FPS | Chi tiết Run | Trạng thái |
 | :--- | :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | `S1-00` | 2026-11-23 | Khánh | `WP-2.2` Sanity | Localizer mồi `TinyStage1Probe`, `2` ảnh (`7` GT), no reg/aug, 80 ep | `100.0%` | `100.0%` | — | `245.7K` | — | — | — | [`S1-00`](run_logs/S1-00_sanity_stage1.md) | **PASSED Gate 2** |
-| `S1-01` | — | — | `WP-3.2` `D1` | Baseline Localizer 1-lớp `person` + NMS | — | — | — | — | — | — | — | — | *Mốc Baseline* |
+| `S1-01` | 2026-11-27 | Khánh | `WP-3.2` `D1` | Baseline CNN 1-scale `26×26` (Bounded Sigmoid + SmoothL1/GIoU + NMS, no aug) | `67.73%` | `40.23%` | `64.11%` | `1.07M` | `2.80 GFLOPs` | `4.11 MB` | `275.6` *(MPS)* | [`S1-01`](run_logs/S1-01_khanh_d1-baseline.md) | **Mốc Baseline (Current Best)** |
 
 ---
 

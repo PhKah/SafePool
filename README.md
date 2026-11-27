@@ -32,7 +32,7 @@ SafePool/
 ```
 
 > [!NOTE]
-> Thư mục `data/raw/`, `data/processed/`, `checkpoints/` và các tệp trọng số/nén (`*.pt`, `*.onnx`, `*.zip`) nằm trong [`.gitignore`](.gitignore) nên không được đẩy lên Git. Thành viên mới sau khi `git clone` chỉ cần tải `data/raw/` theo hướng dẫn dưới đây và chạy script tiền xử lý (sẽ sinh `data/processed/` từ `data/raw/` + `data/splits/`).
+> Thư mục `data/raw/`, `data/stage1/`, `data/processed/`, `checkpoints/` và các tệp trọng số/nén (`*.pt`, `*.onnx`, `*.zip`) nằm trong [`.gitignore`](.gitignore) nên không được đẩy lên Git. Thành viên mới sau khi `git clone` chỉ cần tải `data/raw/` theo hướng dẫn dưới đây và chạy các script tiền xử lý ở mục **Hướng dẫn chạy & Tái lập nhanh**.
 
 ---
 
@@ -101,3 +101,45 @@ SafePool/
 ```
 
 Xem chi tiết phân bố lớp và thống kê EDA tại [`Specs/dataset_specs.md`](Specs/dataset_specs.md).
+
+---
+
+## Hướng dẫn chạy & Tái lập nhanh (Quickstart)
+
+Sau khi đã giải nén dữ liệu gốc vào `data/raw/`, thực hiện lần lượt từ thư mục gốc `SafePool/`:
+
+### 1. Sinh dữ liệu sạch cho Stage 1 & Stage 2 (từ `clean Group Split`)
+
+```bash
+# Stage 1: Sinh nhãn 1-lớp (0: person) & data/stage1/manifest.json
+python scripts/datasets/stage1/prepare_stage1_dataset.py
+
+# Stage 2: Cắt ảnh ROI 128x128 (+20% ngữ cảnh) vào data/processed/
+python scripts/prepare_roi_dataset.py
+```
+
+### 2. Chạy bộ kiểm thử tự động & Gate 2 Sanity Check
+
+```bash
+# Chạy toàn bộ unit tests của dự án
+python -m pytest -v
+
+# Chạy kiểm tra overfit 1 batch (Gate 2) cho cả Stage 2 và Stage 1
+python -m scripts.sanity_check --stage all --sanity-check
+```
+
+### 3. Huấn luyện & Đánh giá Stage 1 — Person Localizer (`D1` Baseline)
+
+```bash
+# Huấn luyện đầy đủ mốc S1-01 (lưu trọng số tốt nhất tại checkpoints/stage1_d1_best.pt
+# và tự động đối chiếu Standard NMS vs Gaussian Soft-NMS trên tập valid sạch)
+python -m src.train_stage1
+
+# Chạy thử nhanh vài batch (smoke test ~10 giây, không ghi đè checkpoint chính)
+python -m src.train_stage1 --epochs 2 --max-batches 5 \
+    --checkpoint checkpoints/tmp_s1.pt --summary checkpoints/tmp_s1.json
+```
+
+### 4. Huấn luyện & Đánh giá Stage 2 — ROI Behavior Classifier (`M1` Baseline)
+
+*(Đang triển khai tại nhánh `WP-3.1` — bổ sung lệnh chạy ngay khi hợp nhất).*
