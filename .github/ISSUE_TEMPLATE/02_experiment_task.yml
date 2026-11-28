@@ -41,17 +41,21 @@ body:
   - type: textarea
     id: hypothesis
     attributes:
-      label: "Giả thuyết kỹ thuật & 1 thay đổi duy nhất"
-      description: "Dựa trên lỗi nào từ Error Analysis của Run trước? Chỉ thay đổi 1 biến chính để so sánh công bằng."
+      label: "Giả thuyết có thể bác bỏ, 1 thay đổi duy nhất & Ngưỡng Đạt/Loại"
+      description: "Mọi suy luận lý thuyết chỉ là manh mối: bắt buộc chốt rõ 1 biến thay đổi và điều kiện số liệu Đạt/Bác bỏ TRƯỚC khi chạy."
       value: |
-        **Lỗi quan sát được ở Run gốc:**
+        **Điểm yếu / lỗi quan sát được từ Error Analysis của Run gốc:**
         -
 
-        **1 thay đổi duy nhất trong thử nghiệm này:**
+        **1 thay đổi duy nhất trong thử nghiệm này (cố định các yếu tố còn lại):**
         -
 
-        **Kỳ vọng cải thiện:**
+        **Giả thuyết kiểm thử:**
         -
+
+        **Tiêu chí Đạt / Bác bỏ định lượng (chốt trước khi train):**
+        - Đạt (Accepted):
+        - Bác bỏ (Rejected):
     validations:
       required: true
 
@@ -68,9 +72,10 @@ body:
     attributes:
       label: "Cam kết quy chuẩn thí nghiệm & DoD (đánh dấu khi mở PR)"
       options:
-        - label: "Đánh giá trên đúng clean Group Split và cùng hàm metric chuẩn của nhóm"
+        - label: "Đánh giá trên đúng clean Group Split (seed=42) và cùng hàm metric chuẩn của nhóm"
         - label: "Không bật thêm RandomVerticalFlip (ảnh gốc Roboflow đã lật dọc 50%)"
-        - label: "Kiểm tra ngân sách Edge AI (tổng 2 Stage < 15 MB, < 5.0M params, < 9.0 GFLOPs, ≥ 30 FPS)"
-        - label: "Đã tạo file Run Log trong Specs/run_logs/ và không push file trọng số (.pt / .onnx)"
+        - label: "Đo đầy đủ Slicing Metrics (Small-box / Crowded Recall hoặc Drowning Recall / FAR)"
+        - label: "Thỏa mãn trần cứng Edge AI của Stage (Stage 1: ≤2.2M / ≤4.5G / ≤18ms; Stage 2: ≤1.3M / ≤0.18G / ≤10ms)"
+        - label: "Đã tạo file Run Log (kể cả khi kết quả Rejected) và không push file trọng số (.pt / .onnx)"
         - label: "Người thực hiện hiểu rõ toàn bộ code thay đổi (kể cả phần Coding Agent tạo)"
 
