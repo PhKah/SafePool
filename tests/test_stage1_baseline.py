@@ -31,6 +31,7 @@ from src.train_stage1 import EarlyStopping, run_stage1_training
 from src.utils.edge_profiler import (
     STAGE1_BUDGET,
     compute_small_box_recall,
+    compute_stage1_slicing_metrics,
     profile_edge_model,
 )
 
@@ -152,6 +153,79 @@ def test_small_box_recall_separates_small_and_regular_targets():
     assert res["num_regular_gt"] == 1
     assert res["small_box_recall"] == 0.0
     assert res["regular_box_recall"] == 1.0
+
+
+def test_compute_stage1_slicing_metrics_taxonomy_and_behavior():
+    """Kiểm tra đo đa chiều Slicing Metrics (Crowded, Behavior 3 lớp, FN/FP taxonomy) theo experiment_log.md."""
+    # Ảnh 1 (Sparse - 2 GT: lớp 0 Drowning nhỏ & lớp 2 Swimming lớn):
+    #   - GT0 (Drowning, nhỏ): bị lệch biên (pred IoU ~ 0.36 -> poor_loc FN + duplicate_cluster FP)
+    #   - GT1 (Swimming, lớn): bắt trúng hoàn hảo (TP)
+    #   - Thêm 1 hộp báo giả ở góc trống xa GT (IoU = 0 -> background_noise FP)
+    gt = [
+        {
+            "boxes": np.array(
+                [
+                    [0.10, 0.10, 0.15, 0.15],  # 20.8x20.8 px (<32x32)
+                    [0.50, 0.50, 0.75, 0.75],  # 104x104 px (>=32x32)
+                ],
+                dtype=np.float32,
+            )
+        },
+        # Ảnh 2 (Crowded - 3 GT: lớp 0, 1, 2): bắt trúng 2, sót 1 do điểm thấp (0.12 < 0.25)
+        {
+            "boxes": np.array(
+                [
+                    [0.10, 0.10, 0.25, 0.25],
+                    [0.35, 0.35, 0.50, 0.50],
+                    [0.65, 0.65, 0.80, 0.80],
+                ],
+                dtype=np.float32,
+            )
+        },
+    ]
+    preds = [
+        {
+            "boxes": np.array(
+                [
+                    [0.50, 0.50, 0.75, 0.75],  # TP cho GT1
+                    [0.10, 0.10, 0.18, 0.16],  # IoU với GT0 = (0.05*0.05)/(0.0025+0.0048-0.0025)=0.52? Chọn 0.19x0.17 -> IoU=0.0025/0.0063=0.397 (poor_loc)
+                    [0.85, 0.05, 0.95, 0.15],  # IoU = 0 (background_noise FP)
+                ],
+                dtype=np.float32,
+            ),
+            "scores": np.array([0.92, 0.60, 0.70], dtype=np.float32),
+        },
+        {
+            "boxes": np.array(
+                [
+                    [0.10, 0.10, 0.25, 0.25],  # TP (score 0.85)
+                    [0.35, 0.35, 0.50, 0.50],  # TP (score 0.80)
+                    [0.65, 0.65, 0.80, 0.80],  # Đúng vị trí nhưng score=0.12 < 0.25 -> low_score FN
+                ],
+                dtype=np.float32,
+            ),
+            "scores": np.array([0.85, 0.80, 0.12], dtype=np.float32),
+        },
+    ]
+    preds[0]["boxes"][1] = np.array([0.10, 0.10, 0.19, 0.17], dtype=np.float32)  # IoU = 0.397 với GT0
+    raw_cls = [[0, 2], [0, 1, 2]]
+
+    s = compute_stage1_slicing_metrics(preds, gt, raw_classes_per_image=raw_cls, score_thr=0.25)
+    assert s["tp"] == 3
+    assert s["fp"] == 2
+    assert s["fn"] == 2
+    assert abs(s["person_recall"] - 3 / 5) < 1e-6
+    assert abs(s["precision"] - 3 / 5) < 1e-6
+    assert abs(s["sparse_recall"] - 1 / 2) < 1e-6
+    assert abs(s["crowded_recall"] - 2 / 3) < 1e-6
+    assert s["fn_taxonomy"]["poor_loc_025_050"] == 1
+    assert s["fn_taxonomy"]["low_score_below_thr"] == 1
+    assert s["fn_taxonomy"]["complete_miss_under_025"] == 0
+    assert s["fp_taxonomy"]["duplicate_cluster_near_gt"] == 1
+    assert s["fp_taxonomy"]["background_noise"] == 1
+    beh = s["behavior_class_recall"]
+    assert beh["support"] == {0: 2, 1: 1, 2: 2}
+    assert beh["matched"] == {0: 1, 1: 1, 2: 1}
 
 
 def test_train_stage1_smoke_pipeline(tmp_path):

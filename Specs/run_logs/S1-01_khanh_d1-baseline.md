@@ -99,11 +99,46 @@ Mọi quyết định thiết kế trong `Stage1BaselineD1` ([`src/models/stage1
    - Khung hình đông (`≥ 3` người/ảnh): `Person Recall` tụt xuống **`59.49%`** (`696 / 1,170`).
    - Mục tiêu nhỏ (`< 32×32 px`): đạt `64.11%` (`309 / 482`), thấp hơn `4.31%` so với nhóm vừa/lớn (`68.42%`).
 
-### 5.2. Kiểm tra DoD & Quyết định
-- [x] Đã chạy trên đúng `clean Group Split` và dùng trực tiếp `train_one_epoch` + `detection_metrics` chuẩn của nhóm (`WP-2.1`).
-- [x] Người thực hiện nắm vững và giải thích đầy đủ toàn bộ kiến trúc, hàm loss, hậu xử lý và kết quả chẩn đoán lỗi.
+### 5.2. Phụ Lục Kiểm Thử Đa Chiều & Soi Trực Quan 30 Mẫu Lỗi (Theo Chuẩn Mới `Specs/experiment_log.md`)
+
+> Tái lập tự động bằng lệnh: `python3 -m scripts.audit_stage1_baseline` *(chỉ chạy trên `valid` sạch, `seed=42`, `0%` chạm `test`; báo cáo JSON & lưới ảnh lưu tại `checkpoints/audit_s1_01/`, xem trực quan tại `notebooks/stage1_d1_audit_experiment_log.ipynb`)*.
+
+#### A. Bảng Slicing Metrics đầy đủ (`@score_thr = 0.25`, `IoU ≥ 0.50`)
+
+| Thước đo (Tổng thể & Phân khúc hiểm) | Standard NMS (`S1-01`) | Gaussian Soft-NMS (`σ=0.5`) | Ghi chú tác động lên chuỗi 2-Stage |
+| :--- | :---: | :---: | :--- |
+| **Person Recall (`@0.25`)** | **`67.73%`** (`2,023 / 2,987`) | `64.81%` (`1,936 / 2,987`) | Mốc chuẩn tổng thể của `D1` |
+| **Precision (`@0.25`)** / **F1 (`@0.25`)** | **`20.59%`** / **`31.58%`** | `21.35%` / `32.11%` | Xuất trung bình `5.30` box/ảnh (`9,823` box / `1,855` ảnh) |
+| **`mAP@50`** *(Full PR Curve)* | **`40.23%`** | `39.87%` | Diện tích toàn đường cong Precision–Recall |
+| **Small-box Recall (`< 32×32 px`)** | `64.11%` (`309 / 482`) | **`65.35%`** (`315 / 482`) | Soft-NMS giữ tốt hơn nhóm người nhỏ sát nhau |
+| **Crowded Recall (`≥ 3` người/ảnh)** | **`59.49%`** (`696 / 1,170`) | `55.64%` (`651 / 1,170`) | Thấp hơn **`-13.54%`** so với cảnh thưa `1–2` người (`73.03%`) |
+| **Recall riêng lớp gốc `0: Drowning`** | **`67.68%`** (`1,353 / 1,999`) | `65.58%` (`1,311 / 1,999`) | **Trần giới hạn trực tiếp của E2E `Drowning Recall` hiện tại** |
+| **Recall riêng lớp gốc `1: Out of water`** | **`40.68%`** (`48 / 118`) | `38.98%` (`46 / 118`) | Điểm mù lớn nhất do thiên lệch nền nước xanh ở tập train |
+| **Recall riêng lớp gốc `2: Swimming`** | **`71.49%`** (`622 / 870`) | `66.55%` (`579 / 870`) | Nhóm dễ nhận diện nhất trên mặt nước |
+
+#### B. Giải phẫu `7,800` hộp thừa (`FP`) & Phát hiện từ soi trực quan `30` ca tệ nhất (`15 FN` + `15 FP`)
+- **Phân rã `7,800` hộp `FP` (`@0.25`):**
+  - **`3,470` hộp (`44.5%`) là `Duplicate Cluster` (`0.10 ≤ IoU < 0.50` quanh GT thật):** Các ô lưới lân cận tâm người cùng phát xung nhưng chồng lấn `< 0.50` nên lọt qua Standard NMS.
+  - **`4,330` hộp (`55.5%`) là `Background FP` (`IoU < 0.10` với mọi GT đã gán nhãn).**
+- **Kết quả quan sát bằng mắt trên `15` ca bỏ sót `0: Drowning` tệ nhất (`worst_15_drowning_fn.png`):**
+  1. **Mất tương phản ở cảnh thiếu sáng / nước tối đen (`valid[1608, 1613, 1616]`):** Nạn nhân rất lớn ở gần camera (`~160×200 px`) nhưng ánh sáng cực tối làm tắt kích hoạt tích chập (`IoU = 0.00`).
+  2. **Cháy sáng lóa nắng & biến đổi phổ màu cực đoan (`valid[1614, 227, 1580, 1584]`):** Bọt trắng lóa gắt (`valid[1614]`) hoặc nước bị lệch màu tím hồng / xanh lá mạ (`valid[227, 1580]`) khiến mạng chưa học Augmentation bị "mù".
+  3. **Mục tiêu siêu nhỏ `< 16×24 px` từ camera góc cao/drone (`valid[1578, 1579, 1581, 318]`):** Chiều ngang người chỉ `10–15 px` — nhỏ hơn bước nhảy `stride = 16 px` của lưới `26×26`.
+- **Kết quả quan sát bằng mắt trên `15` ca `Background FP` điểm cao nhất `score = 0.96–0.99` (`worst_15_background_fp.png`):**
+  1. **Phát hiện quan trọng về nhiễu thiếu nhãn gốc (*Missing Annotation* trong Roboflow):** Trong đa số các ca `score ≥ 0.96` ở bể đông phao bơi (`valid[1591, 668, 877, 879, 881, 722, 723]`), hộp dự đoán của `D1` **thực chất bắt trúng người thật 100%** nhưng ảnh gốc Roboflow quên gán nhãn cho những người đó $\rightarrow$ `Precision` (`20.59%`) và `mAP@50` (`40.23%`) đang bị chấm khắt khe hơn thực tế.
+  2. **Báo giả quang học thật sự (`valid[1640, 176, 133]`):** Đốm nắng khúc xạ trắng trên gợn sóng và phao phân làn bị nhầm thành người bơi nhỏ ở xa.
+
+---
+
+### 5.3. Kiểm tra DoD & Chốt Giả Thuyết Có Ngưỡng Bác Bỏ Cho Vòng Tiếp Theo
+- [x] Đã chạy trên đúng `clean Group Split` (`seed=42`) và dùng trực tiếp `train_one_epoch` + `detection_metrics` chuẩn của nhóm (`WP-2.1`).
+- [x] Đã đo đầy đủ *Slicing Metrics*, soi trực quan 30 ca lỗi tệ nhất và vượt qua cổng cứng `STAGE1_BUDGET` (`1.07M ≤ 2.2M`, `2.80G ≤ 4.5G`, `4.11MB ≤ 9.0MB`, `3.63ms ≤ 18ms`).
 - [x] Không bật `RandomVerticalFlip`; không đẩy file trọng số `.pt` lên Git; vượt `100%` bộ kiểm thử tự động (`pytest`).
-- **Đề xuất quyết định:** **`Giữ làm Mốc Baseline chính thức (Update Current Best — Stage 1)`**
-- **Đầu vào trực tiếp chuyển giao sang `WP-3.3` (*Phân tích lỗi & Mở `EXP-SLOT`*):**
-  1. **Bổ sung Data Augmentation miền bể bơi** (`RandomHorizontalFlip`, `ColorJitter` mô phỏng chói nắng/đổi màu nước, `RandomScale/Translate`) để xóa khoảng cách tổng quát hóa sau Epoch 11.
-  2. **Nâng cấp cổ FPN nhẹ (`52×52` + `26×26`) kèm Residual Skip + gán nhãn đa ô lân cận tâm / Quality Focal Objectness** để giải quyết trực tiếp `572` ca `0.25 ≤ IoU < 0.50` và cắt giảm lượng box dư thừa từ `5.3` về `~2.0` box/ảnh (vẫn giữ trọn trong dư địa ngân sách `1.13M params` & `1.70 GFLOPs` còn trống của Stage 1).
+- **Quyết định cuối cùng:** **`CHẤP NHẬN LÀM MỐC BASELINE (Current Best — Stage 1)`**
+- **Giả thuyết có điều kiện bác bỏ định lượng chuyển sang Giai đoạn 4 (`EXP-SLOT`):**
+  1. **Ứng viên 1 (`S1-02` — Photometric & Geometric Pool Augmentation, `+0` FLOPs suy luận):**
+     - *1 biến thay đổi:* Bật `RandomHorizontalFlip` + `ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)` + `RandomScale/Translate` (tuyệt đối không `VerticalFlip`) để chữa trực tiếp nhóm lỗi tối đen (`valid[1608]`), lóa trắng (`valid[1614]`), lệch màu (`valid[227]`) và quá khớp sau Epoch 11.
+     - *Ngưỡng Đạt (`Accepted`):* `mAP@50` tăng **`≥ +3.0%`** (`≥ 43.2%`), `Person Recall` & `0: Drowning Recall` tăng **`≥ +2.0%`**, `Params/FLOPs` giữ nguyên `1.07M / 2.80G`. *Bác bỏ (`Rejected`)* nếu không đạt ngưỡng trên.
+  2. **Ứng viên 2 (`S1-03` — Lightweight 2-Scale FPN `52×52 + 26×26` + Multi-cell/IoU-aware Assignment):**
+     - *1 biến thay đổi:* Thêm nhánh `52×52` (`stride = 8 px`) và cải tiến gán nhãn quanh tâm để chữa trực tiếp `572` ca lệch biên `0.25 ≤ IoU < 0.50`, mục tiêu `10–16 px` (`valid[1578, 318]`) và `3,470` hộp dư quanh người.
+     - *Ngưỡng Đạt (`Accepted`):* `mAP@50` tăng **`≥ +5.0%`**, `Small-box Recall` & `Crowded Recall` tăng **`≥ +4.0%`**, giữ chặt trong trần `STAGE1_BUDGET` (`≤ 2.2M params`, `≤ 4.5 GFLOPs`, `≤ 18 ms`).

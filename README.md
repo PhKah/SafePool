@@ -138,6 +138,9 @@ python -m src.train_stage1
 # Chạy thử nhanh vài batch (smoke test ~10 giây, không ghi đè checkpoint chính)
 python -m src.train_stage1 --epochs 2 --max-batches 5 \
     --checkpoint checkpoints/tmp_s1.pt --summary checkpoints/tmp_s1.json
+
+# Kiểm thử cắt lát đa chiều (Slicing Metrics) & xuất 30 mẫu lỗi tệ nhất trên tập valid sạch
+python -m scripts.audit_stage1_baseline
 ```
 
 ### 4. Huấn luyện & Đánh giá Stage 2 — ROI Behavior Classifier (`M1` Baseline)

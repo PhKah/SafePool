@@ -59,6 +59,12 @@
 | `S1-00` | 2026-11-23 | Khánh | `WP-2.2` Sanity | Localizer mồi `TinyStage1Probe`, `2` ảnh (`7` GT), no reg/aug, 80 ep | `100.0%` | `100.0%` | — | `245.7K` | — | — | — | [`S1-00`](run_logs/S1-00_sanity_stage1.md) | **PASSED Gate 2** |
 | `S1-01` | 2026-11-27 | Khánh | `WP-3.2` `D1` | Baseline CNN 1-scale `26×26` (Bounded Sigmoid + SmoothL1/GIoU + NMS, no aug) | `67.73%` | `40.23%` | `64.11%` | `1.07M` | `2.80 GFLOPs` | `4.11 MB` | `275.6` *(MPS)* | [`S1-01`](run_logs/S1-01_khanh_d1-baseline.md) | **Mốc Baseline (Current Best)** |
 
+### 4.1. Kiểm Thử Đa Chiều & Chẩn Đoán Lỗi Mốc `S1-01` (`valid` — `1,855` ảnh / `2,987` GT)
+- **Phân khúc hiểm (*Slicing Metrics @0.25*):** `Precision = 20.59%` (`5.30` box/ảnh) | `Sparse Recall (1–2 người) = 73.03%` vs **`Crowded Recall (≥3 người) = 59.49%`** | Theo nhãn hành vi gốc: **`0: Drowning = 67.68%`** (`1,353/1,999`), **`1: Out-of-water = 40.68%`** (`48/118`), **`2: Swimming = 71.49%`** (`622/870`).
+- **Giải phẫu lỗi & Soi 30 mẫu tệ nhất** *(lệnh tái lập: `python -m scripts.audit_stage1_baseline`, chi tiết tại [`S1-01`](run_logs/S1-01_khanh_d1-baseline.md))*:
+  - **`964` ca `FN`:** `59.3%` (`572` ca) đã bắt đúng vùng người nhưng lệch biên `0.25 ≤ IoU < 0.50`; `10.5%` (`101` ca) điểm thấp `< 0.25`; `30.2%` (`291` ca) sót hoàn toàn do **cảnh thiếu sáng tối đen**, **lóa nắng/lệch phổ màu** (khi chưa bật Augmentation) và **người siêu nhỏ `10–15 px` ở góc quay cao** (nhỏ hơn `stride = 16 px`).
+  - **`7,800` hộp `FP`:** `44.5%` (`3,470` hộp) là chùm hộp vây quanh người thật; `55.5%` (`4,330` hộp) có `IoU < 0.10` (trong đó nhiều hộp `score ≥ 0.96` thực tế bắt trúng người thật bị gán thiếu nhãn ở cảnh phao bơi đông người, phần còn lại là nhiễu sóng lóa nắng & phao phân làn).
+
 ---
 
 ## 5. Đánh Giá Chuỗi End-to-End (`Stage 1 → NMS → Stage 2`)
