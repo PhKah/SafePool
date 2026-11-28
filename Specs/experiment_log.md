@@ -13,23 +13,29 @@
 | **Bảng Tổng Hợp Chính** (*Master Table* bên dưới) | **Chỉ PM / Tech Lead** *(hoặc merge PR sau khi Lead duyệt)* | **Cổng kiểm duyệt:** Chỉ các run chạy đúng `clean Group Split`, đúng `1` yếu tố thay đổi và đạt DoD mới được đưa vào Master Table và cập nhật mốc **Current Best**. |
 
 ### Quy trình 5 bước khi thành viên tự thử nghiệm
-1. **Claim Run ID & Giả thuyết:** Kiểm tra WIP ($\le 1\text{--}2$ việc/người), báo lên nhóm để lấy Run ID kế tiếp (tránh trùng ý tưởng) và chốt **1 biến thay đổi duy nhất**.
-2. **Nhánh riêng & Pipeline chuẩn:** Tạo branch riêng (vd: `exp/S2-02-focal-loss`), chạy bằng script train/eval & `clean Group Split` chuẩn chung của nhóm (không tự sửa công thức metric trong lúc thí nghiệm).
-3. **Lưu log & Kiểm tra tại chỗ:** Ghi nhận `commit hash`, `seed`, hyperparams, metrics, `Params / FLOPs / Size`. *(Giữ `.pt` tại local/Drive, không push lên Git).*
-4. **Tạo Run Log & Mở PR:** Copy [`Specs/run_logs/_template.md`](run_logs/_template.md) thành file riêng của run đó, điền phần *Phân tích lỗi* và đề xuất *Giữ / Loại*, rồi mở Pull Request.
-5. **Duyệt & Cập nhật Master Table:** Lead kiểm tra tính tái lập và hợp nhất kết quả vào bảng dưới đây (cùng trạng thái `Current Best` nếu vượt mốc cũ).
+1. **Claim Run ID & Chốt giả thuyết có thể bác bỏ:** Kiểm tra WIP ($\le 1\text{--}2$ việc/người), báo lên nhóm để lấy Run ID kế tiếp (`S2-xx` / `S1-xx`), chốt **1 biến thay đổi duy nhất** và **ngưỡng Đạt / Bác bỏ định lượng trước khi chạy** dựa trên *Error Analysis* của Run gốc.
+2. **Nhánh riêng & Pipeline cố định:** Tạo branch riêng (vd: `exp/S2-02-focal-loss`), chạy bằng script train/eval, `seed=42` & `clean Group Split` chuẩn chung của nhóm (tuyệt đối không đổi tập `valid` hay sửa công thức metric trong lúc thí nghiệm).
+3. **Lưu log & Kiểm tra tại chỗ:** Tự động xuất cấu hình/lịch sử JSON kèm `commit hash`, `seed`, hyperparams, metrics tổng + *Slicing Metrics* và `Params / FLOPs / Size / FPS`. *(Giữ `.pt` tại local/Drive, không push lên Git).*
+4. **Tạo Run Log & Mở PR:** Copy [`Specs/run_logs/_template.md`](run_logs/_template.md) thành file riêng của run đó, điền phần *Phân tích lỗi* và đề xuất **`Giữ (Accepted)`** hoặc **`Loại (Rejected)`**, rồi mở Pull Request.
+5. **Duyệt & Cập nhật Master Table:** Lead đối chiếu kết quả thực tế với ngưỡng Đạt/Bác bỏ ban đầu và trần phần cứng để hợp nhất vào bảng dưới đây *(kể cả run `Loại (Rejected)` vẫn được ghi nhận minh bạch phục vụ bảng Ablation Study)*.
 
 ---
 
-## 2. Quy Tắc Kiểm Soát Vòng Lặp (Early-Stop & Model Freeze)
+## 2. Nguyên Tắc Thực Nghiệm Khoa Học & Kiểm Soát Vòng Lặp (Giai Đoạn 3–4)
 
-- **Nhịp chạy mục tiêu:** `30 phút – 2–3 giờ` / thử nghiệm.
-- **Per-run Early Stopping:** `patience = 8–12 epochs` theo `Drowning Recall` + `Macro F1` / `mAP@50` trên `valid` sạch.
-- **Diminishing Returns:** Tối đa `3–5` giả thuyết chính sau Baseline `M1`; dừng mở thêm nếu `2` vòng liên tiếp tăng `< +0.5%–1.0%` nhưng tăng FLOPs.
-- **Model Freeze:** Chậm nhất **cuối Tuần 6** chốt trọng số tốt nhất thỏa mãn ngân sách Edge AI tổng (`Size < 15 MB`, `Params < 5.0M`, `FLOPs < 9.0 GFLOPs` với $N \le 22$, `≥ 30 FPS`).
-- **Trần ngân sách phân bổ theo Stage** *(chi tiết tại [`Specs/roadmap.md`](roadmap.md))*:
-  - **Stage 1 (`416×416`):** `Params ≤ 2.2M` | `Size ≤ 9.0 MB` (FP32) | `FLOPs ≤ 4.5 GFLOPs` | `Latency ≤ 18 ms`.
-  - **Stage 2 (`128×128`/ROI):** `Params ≤ 1.3M` | `Size ≤ 5.0 MB` (FP32) | `FLOPs ≤ 0.18 GFLOPs/ROI` | `Latency ≤ 10 ms` (batch).
+- **Bác bỏ giả thuyết bằng thực nghiệm (*Hypothesis-Driven & Empirical Falsification*):**
+  - Mọi suy luận lý thuyết chỉ được xem là **manh mối**; bắt buộc đi đúng chuỗi `Soi 20–30 ca sai từ Run trước → Viết giả thuyết có ngưỡng Đạt/Bác bỏ định lượng TRƯỚC khi chạy → Kiểm thử cô lập 1 biến → Kết luận bằng số liệu`.
+  - Nếu số liệu thực tế không đạt ngưỡng kỳ vọng hoặc gây tác dụng phụ lên nhóm an toàn sinh mạng, **bác bỏ ngay giải pháp (`Loại / Rejected`)** và giữ nguyên mốc `Current Best` cũ — không cố bảo vệ suy luận lý thuyết ban đầu.
+- **Cô lập đơn biến (*Controlled Single-Variable Ablation*):** Mỗi Run ID chỉ thay đổi **1 yếu tố chính** (`Baseline` vs `Baseline + Module X`, giữ nguyên `clean Group Split` và `seed=42`) để giải trình chính xác nguyên nhân tăng/giảm hiệu năng.
+- **Đánh giá đa chiều & Cổng loại trừ phần cứng (*Slicing Metrics & Hard Edge Gate*):**
+  - Ngoài chỉ số tổng (`Macro F1` / `mAP@50`), bắt buộc đối chiếu các **phân khúc hiểm**: `0: Drowning` Recall & `FAR` (Stage 2); `Small-box Recall (<32²)`, `Crowded Recall (≥3 người)` & `Precision (@0.25)` (Stage 1).
+  - Bất kỳ cải tiến nào làm **vượt trần ngân sách cứng của Stage đó** đều bị **loại bỏ**, dù tăng nhẹ độ chính xác:
+    - **Stage 1 (`416×416`):** `Params ≤ 2.2M` | `Size ≤ 9.0 MB` (FP32) | `FLOPs ≤ 4.5 GFLOPs` | `Latency ≤ 18 ms`.
+    - **Stage 2 (`128×128`/ROI):** `Params ≤ 1.3M` | `Size ≤ 5.0 MB` (FP32) | `FLOPs ≤ 0.18 GFLOPs/ROI` | `Latency ≤ 10 ms` (batch).
+- **Nhịp chạy & Điểm dừng kỹ thuật (*Early-Stop, Diminishing Returns & Freeze*):**
+  - **Nhịp chạy mục tiêu:** `30 phút – 2–3 giờ` / thử nghiệm; **Per-run Early Stopping:** `patience = 8–12 epochs` (kèm pha `warmup` khi cần cho `mAP@50`) trên `valid` sạch.
+  - **Diminishing Returns:** Tối đa `3–5` giả thuyết trọng tâm sau Baseline `M1`/`D1`; dừng mở thêm slot nếu `2` vòng liên tiếp tăng `< +0.5%–1.0%` nhưng làm tăng FLOPs/Params.
+  - **Model Freeze:** Chậm nhất **cuối Tuần 6** chốt trọng số tốt nhất thỏa mãn ngân sách Edge AI tổng (`Size < 15 MB`, `Params < 5.0M`, `FLOPs < 9.0 GFLOPs` với $N \le 22$, `≥ 30 FPS`).
 
 ---
 
